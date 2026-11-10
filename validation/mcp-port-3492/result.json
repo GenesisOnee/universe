@@ -1,0 +1,97 @@
+{
+  "startedAt": "2026-11-10T09:20:40.802Z",
+  "platform": "win32",
+  "buildRun": 42782291324,
+  "sha256": "afaa0e3534316b888bfb8a5e601ac8d5f234bf67aa9fdfb966f79ac3d9adb2c5",
+  "testMode": false,
+  "miningEnabled": false,
+  "checks": [
+    {
+      "name": "Real loopback listener holds port4444",
+      "at": "2026-11-10T09:20:40.804Z"
+    },
+    {
+      "name": "Real packaged native frontend is ready",
+      "at": "2026-11-10T09:20:45.217Z",
+      "url": "https://tauri.localhost/"
+    },
+    {
+      "name": "Fresh-profile release notes dismissed through the public UI",
+      "at": "2026-11-10T09:20:49.391Z"
+    },
+    {
+      "name": "MCP starts on19222; unauthenticated HTTP receives401",
+      "at": "2026-11-10T09:20:50.006Z"
+    },
+    {
+      "name": "Inline invalid-port feedback",
+      "at": "2026-11-10T09:20:50.045Z",
+      "value": "abc"
+    },
+    {
+      "name": "Inline invalid-port feedback",
+      "at": "2026-11-10T09:20:50.068Z",
+      "value": "1023"
+    },
+    {
+      "name": "Inline invalid-port feedback",
+      "at": "2026-11-10T09:20:50.097Z",
+      "value": "65536"
+    },
+    {
+      "name": "Inline invalid-port feedback",
+      "at": "2026-11-10T09:20:50.124Z",
+      "value": "193334444"
+    },
+    {
+      "name": "Occupied port: inline error, stopped state, saved4444, old listener closed",
+      "at": "2026-11-10T09:20:50.246Z"
+    },
+    {
+      "name": "Enable path reports same saved-port conflict",
+      "at": "2026-11-10T09:20:50.521Z"
+    },
+    {
+      "name": "Changing to free4445 recovers without toggling or fallback",
+      "at": "2026-11-10T09:20:50.721Z"
+    },
+    {
+      "name": "Persisted chosen port and mining-off config verified",
+      "at": "2026-11-10T09:20:50.908Z"
+    },
+    {
+      "name": "Warning-level bind failure includes4444 and OS detail",
+      "at": "2026-11-10T09:20:50.910Z",
+      "warnings": [
+        "09:20:50 WARN  MCP server failed to bind to configured port 4444: Only one usage of each socket address (protocol/network address/port) is normally permitted. (os error 10048)",
+        "2026-11-10 09:20:50.220769100 WARN  MCP server failed to bind to configured port 4444: Only one usage of each socket address (protocol/network address/port) is normally permitted. (os error 10048) // src-tauri\\src\\mcp\\server.rs:127",
+        "2026-11-10 09:20:50.497145700 WARN  MCP server failed to bind to configured port 4444: Only one usage of each socket address (protocol/network address/port) is normally permitted. (os error 10048) // src-tauri\\src\\mcp\\server.rs:127",
+        " 2026-11-10 09:20:50.228409100 ERROR 1.6.21 Failed to update MCP server settings: MCP server port 4444 is already in use: Only one usage of each socket address (protocol/network address/port) is normally permitted. (os error 10048). Choose another port.",
+        " 2026-11-10 09:20:50.505159100 ERROR 1.6.21 Failed to update MCP server settings: MCP server port 4444 is already in use: Only one usage of each socket address (protocol/network address/port) is normally permitted. (os error 10048). Choose another port."
+      ]
+    }
+  ],
+  "outcome": "passed",
+  "nativeUrl": "https://tauri.localhost/",
+  "checkingInvalidValue": "193334444",
+  "finishedAt": "2026-11-10T09:20:51.018Z",
+  "startupDiagnostics": [
+    "Tokio console disabled. To enable, run with: RUSTFLAGS=\"--cfg tokio_unstable\"",
+    "Tokio console disabled. To enable, run with: RUSTFLAGS=\"--cfg tokio_unstable\"",
+    "Initializing logging according to \"C:\\\\Users\\\\runneradmin\\\\AppData\\\\Local\\\\com.tari.universe.alpha\\\\logs\\\\universe\\\\configs\\\\log4rs_config_universe.yml\""
+  ],
+  "mcpLogLines": [
+    "09:20:49 INFO  MCP server bound to configured port 19222",
+    "09:20:50 INFO  MCP server stopped",
+    "09:20:50 WARN  MCP server failed to bind to configured port 4444: Only one usage of each socket address (protocol/network address/port) is normally permitted. (os error 10048)",
+    "09:20:50 INFO  MCP server bound to configured port 4445",
+    "2026-11-10 09:20:49.892373500 INFO  MCP server bound to configured port 19222 // src-tauri\\src\\mcp\\server.rs:139",
+    "2026-11-10 09:20:50.219962600 INFO  MCP server stopped // src-tauri\\src\\mcp\\server.rs:181",
+    "2026-11-10 09:20:50.220769100 WARN  MCP server failed to bind to configured port 4444: Only one usage of each socket address (protocol/network address/port) is normally permitted. (os error 10048) // src-tauri\\src\\mcp\\server.rs:127",
+    "2026-11-10 09:20:50.497145700 WARN  MCP server failed to bind to configured port 4444: Only one usage of each socket address (protocol/network address/port) is normally permitted. (os error 10048) // src-tauri\\src\\mcp\\server.rs:127",
+    "2026-11-10 09:20:50.696504600 INFO  MCP server bound to configured port 4445 // src-tauri\\src\\mcp\\server.rs:139",
+    "2026-11-10 09:20:50.887788300 INFO  MCP server stopped // src-tauri\\src\\mcp\\server.rs:181",
+    " 2026-11-10 09:20:50.228409100 ERROR 1.6.21 Failed to update MCP server settings: MCP server port 4444 is already in use: Only one usage of each socket address (protocol/network address/port) is normally permitted. (os error 10048). Choose another port.",
+    " 2026-11-10 09:20:50.505159100 ERROR 1.6.21 Failed to update MCP server settings: MCP server port 4444 is already in use: Only one usage of each socket address (protocol/network address/port) is normally permitted. (os error 10048). Choose another port."
+  ]
+}
