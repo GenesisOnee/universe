@@ -52,9 +52,25 @@ jobs:
           $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
           $principal = New-Object Security.Principal.WindowsPrincipal($identity)
           if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Existing administrative Windows runner required; no elevation bypass' }
+          # WebView2 150+ ignores environment overrides in elevated hosts.
+          # The provider-supported administrator policy is scoped to this test app.
+          # https://github.com/MicrosoftEdge/WebView2Feedback/issues/5645#issuecomment-4934355430
+          $debugPolicy = (Get-ItemProperty -LiteralPath 'HKLM:\Software\Policies\Microsoft\Edge' -Name RemoteDebuggingAllowed -ErrorAction SilentlyContinue).RemoteDebuggingAllowed
+          if ($null -ne $debugPolicy -and $debugPolicy -eq 0) { throw 'Runner policy forbids debugging; leave it unchanged' }
+          $appPolicy = 'HKLM:\Software\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments'
+          $appName = 'Tari Universe (Alpha).exe'
+          $existing = (Get-ItemProperty -LiteralPath $appPolicy -Name $appName -ErrorAction SilentlyContinue).$appName
+          if ($null -ne $existing) { throw 'Existing app policy must not be overwritten' }
+          New-Item -Path $appPolicy -Force | Out-Null
+          New-ItemProperty -LiteralPath $appPolicy -Name $appName -Value '--remote-debugging-port=9452 --remote-debugging-address=127.0.0.1' -PropertyType String | Out-Null
           $env:TARI_NETWORK = 'esmeralda'
-          node .github/scripts/mcp-port-native-runtime.mjs
-          exit $LASTEXITCODE
+          try {
+            node .github/scripts/mcp-port-native-runtime.mjs
+            $resultCode = $LASTEXITCODE
+          } finally {
+            Remove-ItemProperty -LiteralPath $appPolicy -Name $appName
+          }
+          exit $resultCode
       - name: Retain bounded runtime evidence
         if: always()
         uses: actions/upload-artifact@v7
