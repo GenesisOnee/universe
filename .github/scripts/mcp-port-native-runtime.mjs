@@ -68,10 +68,18 @@ try{
  await setEnabled(true);
  const status=page.getByTestId('mcp-server-status');
  const port=page.getByTestId('mcp-port-input');
+ await port.evaluate(input=>{
+  window.__portUiEvents=[];
+  for(const type of ['input','change','keydown','blur'])input.addEventListener(type,event=>{
+   window.__portUiEvents.push({type,value:input.value,key:event.key??null,trusted:event.isTrusted,invalid:input.getAttribute('aria-invalid')});
+   window.__portUiEvents=window.__portUiEvents.slice(-30);
+  });
+ });
  await expect(status).toHaveText(/running.*19222/i,{timeout:20000});
  await expect.poll(()=>listenerStatus(19222),{timeout:10000}).toBe(401);
  record('MCP starts on19222; unauthenticated HTTP receives401');
  for(const value of ['abc','1023','65536','193334444']){
+  report.checkingInvalidValue=value;save();
   await port.fill(value);await port.press('Enter');
   await expect(page.getByRole('alert').filter({hasText:/1024.*65535/})).toBeVisible();
   await expect(port).toHaveValue(value);
@@ -113,6 +121,17 @@ try{
  record('Warning-level bind failure includes4444 and OS detail',{warnings:[...new Set(warn)]});
  report.outcome='passed';
 }catch(e){report.outcome='failed';report.error=String(e.message).replace(/tu_[A-Za-z0-9_-]+/g,'[redacted]').slice(0,2200);process.exitCode=1;
+ if(page){
+  try{report.portUi=await page.evaluate(()=>{
+   const input=document.querySelector('[data-testid="mcp-port-input"]');
+   const described=input?.getAttribute('aria-describedby');
+   return {port:input?{value:input.value,type:input.type,disabled:input.disabled,invalid:input.getAttribute('aria-invalid'),describedBy:described,description:described?document.getElementById(described)?.textContent:null}:null,
+    status:document.querySelector('[data-testid="mcp-server-status"]')?.textContent,
+    alerts:[...document.querySelectorAll('[role="alert"]')].map(n=>({text:n.textContent,html:n.outerHTML.slice(0,1500)})),events:window.__portUiEvents??[]};
+  });}catch{}
+  try{report.packagedLocale=await page.evaluate(async()=>{const r=await fetch('/locales/en/settings.json');const j=await r.json();return {status:r.status,advanced:j.mcp?.advanced,serverToggle:j.mcp?.['server-toggle']};});}catch{}
+  try{await snapshot('failure-ui');}catch{}
+ }
  try{report.processes=JSON.parse(execFileSync('powershell.exe',['-NoProfile','-Command',"@(Get-Process | Where-Object { $_.ProcessName -match 'Tari Universe|msedgewebview2|WerFault' } | Select-Object ProcessName,Id,MainWindowTitle,Responding) | ConvertTo-Json -Compress"],{encoding:'utf8',windowsHide:true}));}catch{}
  report.pageUrls=browser?.contexts().flatMap(c=>c.pages().map(p=>p.url()))??[];
 }
