@@ -30,6 +30,22 @@ jobs:
           if ($hash -ne 'AFAA0E3534316B888BFB8A5E601AC8D5F234BF67AA9FDFB966F79AC3D9ADB2C5') { throw 'Unexpected build artifact' }
       - name: Install pinned UI driver
         run: npm install --prefix .runtime-driver --no-audit --no-fund --ignore-scripts @playwright/test@1.61.1
+      - name: Verify supported WebView2 runtime prerequisite
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path runtime-evidence -Force | Out-Null
+          $keys = @('HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}', 'HKCU:\Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}')
+          $before = @($keys | ForEach-Object { (Get-ItemProperty -LiteralPath $_ -Name pv -ErrorAction SilentlyContinue).pv } | Where-Object { $_ -and $_ -ne '0.0.0.0' })
+          if ($before.Count -eq 0) {
+            Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/p/?LinkId=2124703' -OutFile WebView2Setup.exe
+            $signature = Get-AuthenticodeSignature -LiteralPath WebView2Setup.exe
+            if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation') { throw 'Expected valid Microsoft installer signature' }
+            $installer = Start-Process -FilePath (Resolve-Path WebView2Setup.exe) -ArgumentList '/silent', '/install' -PassThru -Wait -WindowStyle Hidden
+            if ($installer.ExitCode -ne 0) { throw "WebView2 installer failed: $($installer.ExitCode)" }
+          }
+          $after = @($keys | ForEach-Object { (Get-ItemProperty -LiteralPath $_ -Name pv -ErrorAction SilentlyContinue).pv } | Where-Object { $_ -and $_ -ne '0.0.0.0' })
+          @{before=$before;after=$after;installedNow=($before.Count -eq 0)} | ConvertTo-Json | Set-Content runtime-evidence/webview2-prerequisite.json
+          if ($after.Count -eq 0) { throw 'No supported WebView2 runtime found after prerequisite setup' }
       - name: Run native app through real WebView2 UI
         shell: pwsh
         run: |

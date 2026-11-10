@@ -25,7 +25,8 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const held=net.createServer(socket=>socket.end('held by regression test'));
 let app,browser,page;
 const notes=[];
-const capture=chunk=>{for(const line of chunk.toString().split(/\r?\n/)){if(/MCP.*(bind|already in use|configured port|stopped|starting|started)|WARN.*mcp/i.test(line))notes.push(line.replace(/tu_[A-Za-z0-9_-]+/g,'[redacted]').slice(0,1200));}};
+const startup=[];
+const capture=chunk=>{for(const line of chunk.toString().split(/\r?\n/)){const clean=line.replace(/tu_[A-Za-z0-9_-]+/g,'[redacted]').slice(0,1200);if(/MCP.*(bind|already in use|configured port|stopped|starting|started)|WARN.*mcp/i.test(line))notes.push(clean);if(/Tokio console|Initializing logging|Starting Tari|panicked at|WebView|OpenCL|error while running tauri/i.test(line)&&startup.length<30)startup.push(clean);}};
 async function snapshot(name){await page.screenshot({path:path.join(output,name+'.png'),fullPage:false,mask:[page.locator('[data-testid="mcp-token-value"]')]});}
 async function setEnabled(desired){
  const toggle=page.getByTestId('mcp-server-toggle');
@@ -111,11 +112,14 @@ try{
  assert(warn.length>0,'No warning-level4444 bind line found');
  record('Warning-level bind failure includes4444 and OS detail',{warnings:[...new Set(warn)]});
  report.outcome='passed';
-}catch(e){report.outcome='failed';report.error=String(e.message).replace(/tu_[A-Za-z0-9_-]+/g,'[redacted]').slice(0,2200);process.exitCode=1;}
+}catch(e){report.outcome='failed';report.error=String(e.message).replace(/tu_[A-Za-z0-9_-]+/g,'[redacted]').slice(0,2200);process.exitCode=1;
+ try{report.processes=JSON.parse(execFileSync('powershell.exe',['-NoProfile','-Command',"@(Get-Process | Where-Object { $_.ProcessName -match 'Tari Universe|msedgewebview2|WerFault' } | Select-Object ProcessName,Id,MainWindowTitle,Responding) | ConvertTo-Json -Compress"],{encoding:'utf8',windowsHide:true}));}catch{}
+ report.pageUrls=browser?.contexts().flatMap(c=>c.pages().map(p=>p.url()))??[];
+}
 finally{
  if(browser)await browser.close().catch(()=>{});
  if(app?.pid){try{execFileSync('taskkill.exe',['/PID',String(app.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'});}catch{}}
  if(held.listening)await new Promise(r=>held.close(r));
- report.finishedAt=new Date().toISOString();report.mcpLogLines=[...new Set(notes)].slice(-30);save();
+ report.finishedAt=new Date().toISOString();report.startupDiagnostics=startup;report.mcpLogLines=[...new Set(notes)].slice(-30);save();
  console.log(JSON.stringify(report));
 }
