@@ -62,7 +62,13 @@ try{
  report.nativeUrl=page.url();
  await expect(page.getByTestId('settings-open')).toBeVisible({timeout:5000});
  record('Real packaged native frontend is ready',{url:page.url()});
- if(await page.getByTestId('release-notes-dismiss').isVisible())await page.getByTestId('release-notes-dismiss').click();
+ // The fresh-profile release notes arrive asynchronously after app readiness.
+ // Wait for and dismiss the real modal, rather than interacting behind it.
+ const releaseNotes=page.getByTestId('release-notes-dismiss');
+ await expect(releaseNotes).toBeVisible({timeout:60000});
+ await releaseNotes.click();
+ await expect(releaseNotes).toBeHidden();
+ record('Fresh-profile release notes dismissed through the public UI');
  await page.getByTestId('settings-open').click();
  await page.getByTestId('settings-tab-mcp').click();
  await setEnabled(true);
