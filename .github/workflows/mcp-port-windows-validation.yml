@@ -1,0 +1,61 @@
+name: MCP port Windows validation
+on:
+  push:
+    branches: [verify/mcp-port-feedback-windows]
+permissions:
+  contents: read
+concurrency:
+  group: mcp-port-windows-validation
+  cancel-in-progress: false
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      TARI_NETWORK: esmeralda
+      CARGO_INCREMENTAL: '0'
+      CARGO_BUILD_JOBS: '4'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Install official Windows prerequisites
+        shell: pwsh
+        run: |
+          vcpkg.exe install sqlite3:x64-windows zlib:x64-windows opencl:x64-windows
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          choco upgrade protoc -y
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "SQLITE3_LIB_DIR=C:\vcpkg\installed\x64-windows\lib" >> $env:GITHUB_ENV
+          "LIB=C:\vcpkg\installed\x64-windows\lib" >> $env:GITHUB_ENV
+      - name: Rust formatting
+        run: cargo fmt --all -- --check
+      - name: Install locked frontend dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build process wrapper
+        run: cargo build --locked --manifest-path process-wrapper/Cargo.toml
+      - name: Build unsigned Windows application
+        working-directory: src-tauri
+        run: pnpm exec tauri build --ci --debug --no-bundle
+      - name: Package validation executable
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path validation-artifact | Out-Null
+          Copy-Item -LiteralPath 'target/debug/Tari Universe (Alpha).exe' -Destination validation-artifact
+          Copy-Item -LiteralPath 'target/debug/process-wrapper.exe' -Destination validation-artifact
+          Copy-Item -Path 'C:/vcpkg/installed/x64-windows/bin/*.dll' -Destination validation-artifact
+          Get-ChildItem -LiteralPath validation-artifact -File | Get-FileHash -Algorithm SHA256 | Format-Table -AutoSize | Out-String | Set-Content validation-artifact/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mcp-port-windows-validation
+          path: validation-artifact
+          retention-days: 1
+          if-no-files-found: error
